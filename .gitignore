@@ -1,0 +1,13 @@
+﻿# Python
+venv/
+__pycache__/
+*.pyc
+
+# Env secrets
+.env
+
+# OS
+.DS_Store
+
+# Generated media
+/media/
