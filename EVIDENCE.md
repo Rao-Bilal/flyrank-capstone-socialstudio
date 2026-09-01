@@ -105,6 +105,7 @@ recovers the original correctly, and encrypting the same token twice
 produces a different IV and different ciphertext each time.
 
 
+
 \## SocialPublisher interface with 2 adapters (FakeInstagramPublisher, FakeXPublisher)
 
 Test: tests/test\_social\_publisher.py
@@ -148,4 +149,28 @@ fake\_platform manual testing (see idempotency/rate-limit evidence above)
 and exercised automatically by the pytest suite above.
 
 
+
+\## Delivery webhooks are signature-verified; forged/modified events rejected
+
+Test: tests/test\_webhook\_verifier.py
+
+
+
+Output:
+
+tests/test\_webhook\_verifier.py::test\_valid\_signature\_is\_accepted PASSED
+
+tests/test\_webhook\_verifier.py::test\_forged\_signature\_is\_rejected PASSED
+
+tests/test\_webhook\_verifier.py::test\_modified\_body\_with\_old\_signature\_is\_rejected PASSED
+
+9 passed in 1.56s
+
+
+
+Confirms: HMAC-SHA256 signature verification correctly accepts valid
+
+signatures, rejects forged signatures, and rejects a tampered body even
+
+if paired with the original (now-invalid) signature.
 
