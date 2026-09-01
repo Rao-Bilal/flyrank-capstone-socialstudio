@@ -174,3 +174,27 @@ signatures, rejects forged signatures, and rejects a tampered body even
 
 if paired with the original (now-invalid) signature.
 
+
+
+
+
+\## Real persistence with proper schema
+
+Test: tests/test\_db.py::test\_init\_db\_creates\_tables
+
+
+
+Output:
+
+tests/test\_db.py::test\_init\_db\_creates\_tables PASSED
+
+10 passed in 2.07s
+
+
+
+Confirms: SQLite schema creates campaigns and social\_post\_entries tables
+
+with foreign key relationship, a UNIQUE constraint on (campaign\_id, platform)
+
+to prevent duplicate entries, and indexes on campaign\_id and idempotency\_key.
+

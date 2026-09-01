@@ -11,3 +11,5 @@ __pycache__/
 
 # Generated media
 /media/
+
+campaigns.db
