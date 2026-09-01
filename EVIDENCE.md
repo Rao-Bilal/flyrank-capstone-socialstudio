@@ -46,3 +46,37 @@ No duplicated prompts - both platforms compose BRAND\_VOICE + platform-specific
 
 fragment from app/config/social\_prompts.py.
 
+\## Idempotent publishing (fake platform server)
+
+Manual test via PowerShell against fake\_platform server on port 9000.
+
+
+
+First call with Idempotency-Key "test-key-002":
+
+platform\_post\_id: post-5b066d10-10ca-4d1c-b48d-2b7a17a8f18b, status: accepted
+
+
+
+Second call, SAME Idempotency-Key "test-key-002":
+
+platform\_post\_id: post-5b066d10-10ca-4d1c-b48d-2b7a17a8f18b, status: accepted
+
+
+
+Same platform\_post\_id returned both times - confirms retrying with the
+
+same idempotency key does not create a duplicate post.
+
+
+
+\## Rate limiting (fake platform server)
+
+Manual test via PowerShell against fake\_platform server on port 9000.
+
+Request with Idempotency-Key "test-key-001" returned:
+
+{"detail":"Rate limited"} with HTTP 429 and Retry-After header.
+
+Confirms the fake platform randomly simulates rate limiting as required.
+
