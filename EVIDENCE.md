@@ -80,3 +80,27 @@ Request with Idempotency-Key "test-key-001" returned:
 
 Confirms the fake platform randomly simulates rate limiting as required.
 
+
+
+\## OAuth tokens encrypted at rest, random IV
+
+Test: tests/test\_crypto\_utils.py
+
+
+
+Output:
+
+tests/test\_crypto\_utils.py::test\_encrypt\_decrypt\_roundtrip PASSED
+
+tests/test\_crypto\_utils.py::test\_random\_iv\_each\_time PASSED
+
+4 passed in 1.35s
+
+
+
+Confirms: encrypted ciphertext never contains the plaintext token, decrypt
+
+recovers the original correctly, and encrypting the same token twice
+
+produces a different IV and different ciphertext each time.
+
