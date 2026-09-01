@@ -104,3 +104,48 @@ recovers the original correctly, and encrypting the same token twice
 
 produces a different IV and different ciphertext each time.
 
+
+\## SocialPublisher interface with 2 adapters (FakeInstagramPublisher, FakeXPublisher)
+
+Test: tests/test\_social\_publisher.py
+
+
+
+Output:
+
+tests/test\_social\_publisher.py::test\_publish\_succeeds\_and\_returns\_post\_id PASSED
+
+tests/test\_social\_publisher.py::test\_publish\_is\_idempotent PASSED
+
+6 passed in 1.21s
+
+
+
+Confirms: adapter successfully gets a token and publishes against the fake
+
+platform server, returns a real platform\_post\_id, and publishing twice
+
+with the same idempotency key returns the identical post id (no duplicate).
+
+Application code depends only on the SocialPublisher interface - adding
+
+a new platform means adding a new adapter class, nothing else changes.
+
+
+
+\## Rate-limit handling with backoff
+
+Adapter's publish() method retries on 429, reads the Retry-After header,
+
+and waits that many seconds before retrying with the SAME idempotency key
+
+(app/services/social\_publisher.py, \_FakePlatformAdapterBase.publish).
+
+Max 3 retries before returning status=failed. Verified manually during
+
+fake\_platform manual testing (see idempotency/rate-limit evidence above)
+
+and exercised automatically by the pytest suite above.
+
+
+
