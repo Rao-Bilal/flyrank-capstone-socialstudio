@@ -198,3 +198,29 @@ with foreign key relationship, a UNIQUE constraint on (campaign\_id, platform)
 
 to prevent duplicate entries, and indexes on campaign\_id and idempotency\_key.
 
+
+
+
+
+\## Full publish → webhook → published flow (live integration test)
+
+Created campaign, generated content, called /publish-now.
+
+Both entries received "publishing" -> fake platform published synchronously
+
+\-> signed webhook delivered to /webhook/social-delivery -> signature verified
+
+\-> entries flipped to "published" with correct platform\_post\_id, matched via
+
+idempotency\_key (fixes a race where the webhook can arrive before publish\_now
+
+finishes writing platform\_post\_id).
+
+
+
+campaign\_id: deda0ec4-0d05-4b5b-bfd4-27d10fcf3f00
+
+instagram: status=published, platform\_post\_id=post-55eafff3-2d38-41eb-8f71-b157e9df1cbf
+
+x:         status=published, platform\_post\_id=post-9b6ac848-d05f-4fbd-a65f-7210d362c548
+

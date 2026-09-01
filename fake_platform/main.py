@@ -13,6 +13,7 @@ Run with: uvicorn fake_platform.main:app --reload --port 9000
 
 import hashlib
 import hmac
+import json
 import random
 import time
 import uuid
@@ -83,21 +84,36 @@ async def publish(
 
 
 async def _send_delivery_webhook(webhook_url: str, platform_post_id: str, idempotency_key: str):
+    """
+    Sends a signed delivery webhook back to the caller.
+
+    IMPORTANT: we serialize the payload to JSON exactly once with
+    json.dumps, sign THOSE EXACT BYTES, and send THOSE EXACT BYTES via
+    content=body. We deliberately do NOT use httpx's json=payload
+    shortcut, because that would let httpx re-serialize the payload
+    independently -- and if its serialization differs even slightly
+    from what we signed (key order, spacing, quoting), the receiver's
+    signature check would fail even though the payload is legitimate.
+    Signing and sending must operate on the same bytes.
+    """
     payload = {
         "platform_post_id": platform_post_id,
         "idempotency_key": idempotency_key,
         "status": "published",
         "timestamp": int(time.time()),
     }
-    body = str(payload).encode()
+    body = json.dumps(payload).encode()
     signature = hmac.new(WEBHOOK_SECRET.encode(), body, hashlib.sha256).hexdigest()
 
     async with httpx.AsyncClient() as client:
         try:
             await client.post(
                 webhook_url,
-                json=payload,
-                headers={"X-Signature": signature},
+                content=body,
+                headers={
+                    "X-Signature": signature,
+                    "Content-Type": "application/json",
+                },
                 timeout=5.0,
             )
         except Exception as e:
