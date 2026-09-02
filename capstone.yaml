@@ -1,0 +1,99 @@
+# Evaluator manifest for the FlyRank Capstone - Multi-Platform Social Campaign Publisher.
+# This system requires TWO servers running simultaneously: the fake social
+# platform (port 9000) and the main application (port 8000). Start the fake
+# platform first.
+
+name: flyrank-capstone-socialstudio
+description: >
+  Multi-platform social campaign publisher. Turns a blog post into
+  platform-tailored image + caption content, published idempotently
+  through a SocialPublisher adapter layer against a fake social platform
+  server, with rate-limit backoff, durable crash-safe scheduling, and
+  signature-verified webhook status tracking.
+
+base_url: http://127.0.0.1:8000
+fake_platform_url: http://127.0.0.1:9000
+
+setup:
+  - python -m venv venv
+  - venv\Scripts\activate
+  - pip install -r requirements.txt
+
+# Two long-running processes must both be started (in separate terminals)
+# before probing base_url. There is no single combined "run" command
+# because the fake platform and the main app are intentionally separate
+# services, mirroring how a real publishing system would talk to a real
+# platform's API.
+run:
+  - "uvicorn fake_platform.main:app --reload --port 9000"
+  - "uvicorn app.main:app --reload --port 8000"
+
+seed: |
+  python -c "from PIL import Image; Image.new('RGB', (1200, 1200), color=(70, 130, 180)).save('media/source.jpg')"
+
+test: pytest -v
+
+endpoints:
+  - method: GET
+    path: /health
+    expect_status: 200
+
+  - method: POST
+    path: /campaigns
+    body: { "title": "string", "body": "string", "url": "string (optional)" }
+    expect_status: 200
+    returns: campaign_id, status
+
+  - method: POST
+    path: /campaigns/{campaign_id}/generate?source_image_path=media/source.jpg
+    expect_status: 200
+    returns: campaign_id, platforms
+
+  - method: POST
+    path: /campaigns/{campaign_id}/publish-now
+    expect_status: 200
+    returns: campaign_id, results (list of platform + platform_post_id)
+
+  - method: POST
+    path: /campaigns/{campaign_id}/schedule?scheduled_at=2026-01-01T09:00:00
+    expect_status: 200
+    returns: campaign_id, status, scheduled_at
+
+  - method: GET
+    path: /campaigns/{campaign_id}
+    expect_status: 200
+    returns: campaign (with status), entries (per-platform status + platform_post_id)
+
+  - method: POST
+    path: /webhook/social-delivery
+    note: >
+      Called BY the fake platform, not by the evaluator directly - but can
+      be probed manually with a forged X-Signature header to confirm 400
+      rejection (see tests/test_webhook_security.py for the automated
+      version of this exact probe).
+    expect_status: "200 for valid signature, 400 for forged/tampered"
+
+probes:
+  - name: idempotent_publish
+    description: Publish the same campaign twice / retry after timeout -> exactly 1 post per platform, not more.
+    proof: tests/test_social_publisher.py, EVIDENCE.md
+
+  - name: rate_limit_backoff
+    description: On 429 + Retry-After, worker waits and retries without hammering, eventually succeeding.
+    proof: tests/test_rate_limit_backoff.py
+
+  - name: durable_scheduling_crash_recovery
+    description: Kill the server before a scheduled job fires, restart -> job still fires, no duplicate publish.
+    proof: tests/test_crash_recovery.py, EVIDENCE.md (manual crash test)
+
+  - name: webhook_signature_verification
+    description: Forged or tampered delivery webhook -> 400, status unchanged. Valid webhook -> status flips to published.
+    proof: tests/test_webhook_security.py, tests/test_webhook_verifier.py
+
+  - name: image_variant_dimensions
+    description: Instagram variant is 1080x1080, X variant is 1600x900.
+    proof: tests/test_image_pipeline.py
+
+  - name: encrypted_tokens_at_rest
+    description: OAuth tokens are AES-GCM encrypted with a random IV per encryption; never stored or logged in plaintext.
+    proof: tests/test_crypto_utils.py
