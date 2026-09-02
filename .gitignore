@@ -13,3 +13,5 @@ __pycache__/
 /media/
 
 campaigns.db
+
+jobs.db

@@ -224,3 +224,121 @@ instagram: status=published, platform\_post\_id=post-55eafff3-2d38-41eb-8f71-b15
 
 x:         status=published, platform\_post\_id=post-9b6ac848-d05f-4fbd-a65f-7210d362c548
 
+
+
+
+
+\## Rate limiting with backoff (deterministic test)
+
+Test: tests/test\_rate\_limit\_backoff.py
+
+
+
+Output:
+
+tests/test\_rate\_limit\_backoff.py::test\_publish\_retries\_after\_429\_and\_succeeds PASSED
+
+tests/test\_rate\_limit\_backoff.py::test\_publish\_gives\_up\_after\_max\_retries PASSED
+
+2 passed in 1.17s
+
+
+
+Confirms: on 429 the adapter reads Retry-After, backs off, and retries
+
+using the SAME idempotency key (safe - no duplicate posts), succeeding
+
+once the platform accepts. Also confirms the adapter gives up cleanly
+
+after MAX\_RETRIES rather than retrying forever.
+
+
+
+\## Durable scheduling (auto-publish at scheduled time)
+
+Campaign 6d330c64-8069-4c70-bdf8-a4b1c5aa3afa scheduled for 2026-09-02T12:14:22
+
+via POST /campaigns/{id}/schedule. No /publish-now call was ever made.
+
+
+
+Log shows scheduler firing on its own:
+
+POST /webhook/social-delivery 200 OK  (instagram)
+
+POST /webhook/social-delivery 200 OK  (x)
+
+
+
+Final GET /campaigns/{id} confirms:
+
+campaign.status: published
+
+instagram: status=published, platform\_post\_id=post-506bbfc2-98f4-468f-be4e-1c3d045d5a8c
+
+x:         status=published, platform\_post\_id=post-7364578c-e3d1-4d23-bba5-e11eca4ba64e
+
+
+
+Confirms: jobs.db (APScheduler SQLAlchemyJobStore) persisted the job,
+
+and BackgroundScheduler fired it automatically at the scheduled time.
+
+
+
+
+
+\## Crash recovery - manual proof
+
+1\. Scheduled campaign 15047daa-c3e7-43b1-acb4-77f55af69e94 for 2026-09-02T12:17:32
+
+2\. Killed the server (Ctrl+C) BEFORE that time - confirmed down via
+
+&#x20;  failed GET request ("Unable to connect to the remote server")
+
+3\. Waited past the scheduled time while server was down
+
+4\. Restarted server - APScheduler's SQLAlchemyJobStore (jobs.db) had
+
+&#x20;  persisted the job; it fired immediately on startup:
+
+&#x20;  POST /webhook/social-delivery 200 OK  (x2)
+
+5\. GET /campaigns/{id} confirmed status: published for campaign + both entries
+
+6\. Manually re-called POST /campaigns/{id}/publish-now on the same
+
+&#x20;  already-published campaign - result showed skipped\_already\_published:
+
+&#x20;  true for both platforms, with UNCHANGED platform\_post\_id values
+
+&#x20;  (post-28260869-... and post-4db55129-...) - proving no duplicate
+
+&#x20;  posts were created on re-run.
+
+
+
+\## Crash recovery - automated test
+
+Test: tests/test\_crash\_recovery.py::test\_publish\_campaign\_is\_safe\_to\_call\_twice
+
+
+
+Output:
+
+tests/test\_crash\_recovery.py::test\_publish\_campaign\_is\_safe\_to\_call\_twice PASSED
+
+1 passed in 0.83s
+
+
+
+Confirms: calling publish\_campaign() twice for the same campaign only
+
+ever triggers the underlying platform /publish HTTP call ONCE per
+
+platform. The second call detects already-published entries and skips
+
+them entirely - this is the mechanism that makes a scheduled job safe
+
+to re-run after a crash without creating duplicate posts.
+
