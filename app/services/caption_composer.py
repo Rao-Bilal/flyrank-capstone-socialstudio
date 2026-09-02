@@ -9,16 +9,29 @@ from app.config.social_prompts import build_caption_prompt, PLATFORM_FRAGMENTS
 
 
 def _template_fallback(platform: str, post_title: str, post_summary: str) -> str:
-    """Deterministic, no-AI fallback so the pipeline always works at $0."""
+    """
+    Deterministic, no-AI fallback so the pipeline always works at $0.
+    Mirrors the actual rules in PLATFORM_FRAGMENTS (social_prompts.py)
+    rather than a generic template, so the platform voice difference is
+    real and visible - not just cosmetic punctuation.
+    """
     if platform == "instagram":
+        # Casual, warm, soft CTA, hashtags on a new line - per
+        # PLATFORM_FRAGMENTS["instagram"].
         return (
-            f"{post_title}\n\n{post_summary}\n\n"
-            f"Read the full story - link in bio!\n"
-            f"#tech #flyrank #buildinpublic"
+            f"{post_title} ✨\n\n"
+            f"{post_summary}\n\n"
+            f"Swipe through and let us know your thoughts below! 👇\n"
+            f"Read the full story - link in bio!\n\n"
+            f"#flyrank #productivity #buildinpublic"
         )
     elif platform == "x":
-        summary_short = post_summary[:180]
-        return f"{post_title}: {summary_short}"
+        # Punchy, concise, hook-first, <=280 chars INCLUDING hashtags,
+        # at most 1-2 hashtags - per PLATFORM_FRAGMENTS["x"].
+        hashtags = " #flyrank"
+        max_body_len = 280 - len(hashtags) - len(post_title) - 3  # 3 for " — "
+        summary_short = post_summary[:max_body_len].rstrip()
+        return f"{post_title} — {summary_short}{hashtags}"
     else:
         raise ValueError(f"Unknown platform: {platform}")
 

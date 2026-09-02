@@ -17,10 +17,23 @@ from app.services.caption_composer import generate_all_captions
 from app.services.image_pipeline import generate_all_variants
 from app.services.publish_service import publish_campaign
 from app.services.webhook_verifier import verify_signature
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 app = FastAPI(title="FlyRank Social Campaign Publisher")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 MEDIA_DIR = Path("media")
+
+MEDIA_DIR.mkdir(exist_ok=True)
+app.mount("/media", StaticFiles(directory="media"), name="media")
 
 
 @app.on_event("startup")
@@ -38,6 +51,10 @@ def on_shutdown():
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+@app.get("/dashboard")
+def dashboard():
+    return FileResponse("app/static/index.html")
 
 
 @app.post("/campaigns")

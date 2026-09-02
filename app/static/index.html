@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>FlyRank Social Campaign Publisher</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --border: #e8e4dc;
+    --text: #2d2a26;
+    --muted: #8a8478;
+    --accent: #d97757;
+    --accent-hover: #c76745;
+    --accent-soft: #fbeee7;
+    --green: #4a7c59;
+    --green-soft: #eaf3ec;
+    --yellow: #b8862e;
+    --yellow-soft: #fbf1de;
+    --red: #c0503f;
+    --red-soft: #fbeae7;
+    --blue: #5b7ba8;
+    --blue-soft: #eaf1f8;
+    --shadow: 0 1px 3px rgba(45, 42, 38, 0.06), 0 1px 2px rgba(45, 42, 38, 0.04);
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Inter", -apple-system, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    padding: 32px 40px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .header { margin-bottom: 28px; display: flex; align-items: center; gap: 14px; }
+  .header-icon {
+    width: 38px; height: 38px;
+    background: var(--accent);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700; font-size: 16px;
+    flex-shrink: 0;
+  }
+  h1 { font-size: 19px; margin: 0; font-weight: 600; letter-spacing: -0.01em; }
+  .subtitle { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .grid { display: grid; grid-template-columns: 380px 1fr; gap: 22px; align-items: start; }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+    box-shadow: var(--shadow);
+  }
+  .panel h2 {
+    font-size: 11px; margin: 0 0 16px 0; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;
+  }
+  .section-divider { border-top: 1px solid var(--border); margin: 22px 0 18px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 12px 0 5px; font-weight: 500; }
+  input, textarea {
+    width: 100%;
+    background: #fdfcfa;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    transition: border-color 0.15s;
+  }
+  input:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: #fff;
+  }
+  textarea { min-height: 72px; resize: vertical; line-height: 1.4; }
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 12px;
+    margin-right: 6px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  button:hover:not(:disabled) { background: var(--accent-hover); }
+  button:active:not(:disabled) { transform: scale(0.98); }
+  button.secondary { background: #f1efe9; color: var(--text); }
+  button.secondary:hover:not(:disabled) { background: #e8e4dc; }
+  button.danger { background: var(--red); }
+  button.danger:hover:not(:disabled) { background: #a8402f; }
+  button:disabled { opacity: 0.35; cursor: not-allowed; }
+  .campaign-id-box {
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 11px;
+    color: var(--muted);
+    word-break: break-all;
+    background: #fdfcfa;
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-top: 10px;
+    border: 1px solid var(--border);
+  }
+  .status-badge {
+    display: inline-block;
+    padding: 3px 11px;
+    border-radius: 20px;
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .status-draft { background: #f1efe9; color: var(--muted); }
+  .status-scheduled { background: var(--blue-soft); color: var(--blue); }
+  .status-publishing { background: var(--yellow-soft); color: var(--yellow); }
+  .status-published { background: var(--green-soft); color: var(--green); }
+  .status-failed { background: var(--red-soft); color: var(--red); }
+  .entry-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 14px;
+    display: flex;
+    gap: 16px;
+    background: #fdfcfa;
+    transition: box-shadow 0.15s;
+  }
+  .entry-card:hover { box-shadow: var(--shadow); }
+  .entry-card img {
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #f1efe9;
+    flex-shrink: 0;
+    object-fit: cover;
+  }
+  .entry-card img.aspect-square { width: 100px; height: 100px; }
+  .entry-card img.aspect-wide { width: 160px; height: 90px; }
+  .entry-details { flex: 1; min-width: 0; }
+  .entry-platform {
+    font-weight: 600; text-transform: capitalize; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px; font-size: 14px;
+  }
+  .entry-caption {
+    font-size: 12.5px;
+    color: #5c584f;
+    white-space: pre-wrap;
+    max-height: 140px;
+    overflow-y: auto;
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+  .entry-meta {
+    font-size: 10.5px; color: var(--muted); margin-top: 10px;
+    font-family: "SF Mono", Menlo, monospace; line-height: 1.6;
+  }
+  .empty-state {
+    color: var(--muted); font-size: 13px; padding: 50px 20px; text-align: center;
+    border: 1.5px dashed var(--border); border-radius: 12px;
+  }
+  .log-box {
+    background: #fdfcfa;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 11px;
+    max-height: 170px;
+    overflow-y: auto;
+    margin-top: 16px;
+    color: #6b665c;
+  }
+  .log-line { margin-bottom: 5px; }
+  .log-line.error { color: var(--red); }
+  .log-line.success { color: var(--green); }
+  .campaign-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--border);
+  }
+  .campaign-title { font-weight: 600; font-size: 15px; }
+  .campaign-id-small { font-size: 11px; color: var(--muted); margin-top: 3px; font-family: "SF Mono", Menlo, monospace; }
+  .action-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .schedule-row { display: flex; gap: 8px; align-items: flex-end; margin-top: 10px; }
+  .schedule-row input { flex: 1; }
+  .schedule-row button { margin-top: 0; white-space: nowrap; }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 5px; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">FR</div>
+  <div>
+    <h1>FlyRank Social Campaign Publisher</h1>
+    <div class="subtitle">Multi-platform publishing against a fake social platform — no real account is ever touched</div>
+  </div>
+</div>
+
+<div class="grid">
+
+  <!-- LEFT: create + actions -->
+  <div class="panel">
+    <h2>1 · Create Campaign</h2>
+    <label>Title</label>
+    <input id="title" value="10 Tips for Remote Work" />
+    <label>Body</label>
+    <textarea id="bodyText">Remote work is here to stay. Here are ten tips to help you stay productive, focused, and sane while working from home.</textarea>
+    <label>Source URL</label>
+    <input id="url" value="https://flyrank.example.com/blog/remote-work-tips" />
+    <button onclick="createCampaign()">Create Campaign</button>
+
+    <div id="campaignIdBox" class="campaign-id-box" style="display:none;"></div>
+
+    <div class="section-divider"></div>
+
+    <h2>2 · Pipeline</h2>
+    <div class="action-row">
+      <button class="secondary" onclick="generateContent()" id="btnGenerate" disabled>Generate Content</button>
+      <button onclick="publishNow()" id="btnPublish" disabled>Publish Now</button>
+    </div>
+
+    <div class="schedule-row">
+      <div style="flex:1;">
+        <label>Schedule for</label>
+        <input id="scheduleTime" type="text" />
+      </div>
+      <button class="secondary" onclick="scheduleCampaign()" id="btnSchedule" disabled>Schedule</button>
+    </div>
+    <div class="hint">Durable job — survives a server crash/restart</div>
+
+    <div class="section-divider"></div>
+
+    <h2>3 · Reliability Demos</h2>
+    <div class="action-row">
+      <button class="secondary" onclick="hammerPublish()" id="btnHammer" disabled>Hammer Publish ×5</button>
+      <button class="danger" onclick="sendForgedWebhook()">Send Forged Webhook</button>
+    </div>
+
+    <div class="log-box" id="logBox">
+      <div class="log-line">Ready. Create a campaign to begin.</div>
+    </div>
+  </div>
+
+  <!-- RIGHT: live status -->
+  <div class="panel">
+    <h2>Live Campaign Status</h2>
+    <div id="statusPanel">
+      <div class="empty-state">No campaign yet — create one on the left to get started.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API = "http://127.0.0.1:8000";
+let currentCampaignId = null;
+let pollTimer = null;
+
+function log(msg, cls) {
+  const box = document.getElementById("logBox");
+  const line = document.createElement("div");
+  line.className = "log-line" + (cls ? " " + cls : "");
+  const ts = new Date().toLocaleTimeString();
+  line.textContent = `[${ts}] ${msg}`;
+  box.prepend(line);
+}
+
+function setDefaultScheduleTime() {
+  const d = new Date(Date.now() + 30000);
+  const pad = n => String(n).padStart(2, "0");
+  const val = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  document.getElementById("scheduleTime").value = val;
+}
+setDefaultScheduleTime();
+
+async function createCampaign() {
+  const title = document.getElementById("title").value;
+  const bodyText = document.getElementById("bodyText").value;
+  const url = document.getElementById("url").value;
+
+  try {
+    const res = await fetch(`${API}/campaigns`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, body: bodyText, url }),
+    });
+    const data = await res.json();
+    currentCampaignId = data.campaign_id;
+
+    document.getElementById("campaignIdBox").style.display = "block";
+    document.getElementById("campaignIdBox").textContent = "Campaign ID: " + currentCampaignId;
+    document.getElementById("btnGenerate").disabled = false;
+
+    log(`Campaign created: ${currentCampaignId}`, "success");
+    startPolling();
+  } catch (e) {
+    log("Failed to create campaign: " + e, "error");
+  }
+}
+
+async function generateContent() {
+  if (!currentCampaignId) return;
+  try {
+    const res = await fetch(`${API}/campaigns/${currentCampaignId}/generate?source_image_path=media/source.jpg`, {
+      method: "POST",
+    });
+    const data = await res.json();
+    log(`Content generated for platforms: ${data.platforms.join(", ")}`, "success");
+    document.getElementById("btnPublish").disabled = false;
+    document.getElementById("btnSchedule").disabled = false;
+    document.getElementById("btnHammer").disabled = false;
+    refreshStatus();
+  } catch (e) {
+    log("Failed to generate content: " + e, "error");
+  }
+}
+
+async function publishNow() {
+  if (!currentCampaignId) return;
+  try {
+    const res = await fetch(`${API}/campaigns/${currentCampaignId}/publish-now`, { method: "POST" });
+    const data = await res.json();
+    log(`Publish triggered — ${data.results.length} result(s)`, "success");
+    refreshStatus();
+  } catch (e) {
+    log("Publish failed: " + e, "error");
+  }
+}
+
+async function scheduleCampaign() {
+  if (!currentCampaignId) return;
+  const scheduledAt = document.getElementById("scheduleTime").value;
+  try {
+    const res = await fetch(`${API}/campaigns/${currentCampaignId}/schedule?scheduled_at=${encodeURIComponent(scheduledAt)}`, {
+      method: "POST",
+    });
+    const data = await res.json();
+    log(`Scheduled for ${data.scheduled_at} — durable job stored, survives a restart`, "success");
+    refreshStatus();
+  } catch (e) {
+    log("Schedule failed: " + e, "error");
+  }
+}
+
+async function hammerPublish() {
+  if (!currentCampaignId) return;
+  log("Hammering /publish-now ×5 to prove idempotency...");
+  for (let i = 1; i <= 5; i++) {
+    try {
+      const res = await fetch(`${API}/campaigns/${currentCampaignId}/publish-now`, { method: "POST" });
+      await res.json();
+      log(`  call ${i}/5 done`);
+    } catch (e) {
+      log(`  call ${i}/5 failed: ${e}`, "error");
+    }
+  }
+  log("Hammer complete — check entries: same platform_post_id every time.", "success");
+  refreshStatus();
+}
+
+async function sendForgedWebhook() {
+  const fakePayload = JSON.stringify({
+    platform_post_id: "post-forged-attempt",
+    idempotency_key: currentCampaignId ? `${currentCampaignId}:instagram` : "fake:instagram",
+    status: "published",
+    timestamp: Math.floor(Date.now() / 1000),
+  });
+  try {
+    const res = await fetch(`${API}/webhook/social-delivery`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Signature": "0".repeat(64) },
+      body: fakePayload,
+    });
+    if (res.status === 400) {
+      log("Forged webhook correctly REJECTED with 400", "success");
+    } else {
+      log(`Unexpected status for forged webhook: ${res.status}`, "error");
+    }
+  } catch (e) {
+    log("Forged webhook request failed: " + e, "error");
+  }
+}
+
+function statusBadge(status) {
+  return `<span class="status-badge status-${status}">${status}</span>`;
+}
+
+async function refreshStatus() {
+  if (!currentCampaignId) return;
+  try {
+    const res = await fetch(`${API}/campaigns/${currentCampaignId}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    renderStatus(data);
+  } catch (e) {
+    // silent - polling will retry
+  }
+}
+
+function renderStatus(data) {
+  const c = data.campaign;
+  const entries = data.entries;
+
+  let html = `
+    <div class="campaign-header">
+      <div>
+        <div class="campaign-title">${c.source_post_title}</div>
+        <div class="campaign-id-small">${c.id}</div>
+      </div>
+      ${statusBadge(c.status)}
+    </div>
+  `;
+
+  if (entries.length === 0) {
+    html += `<div class="empty-state">No entries yet — click "Generate Content".</div>`;
+  } else {
+    for (const e of entries) {
+      const imgSrc = e.image_path ? `${API}/media/${e.image_path.split(/[\\/]/).slice(-2).join("/")}` : "";
+      const aspectClass = e.platform === "instagram" ? "aspect-square" : "aspect-wide";
+      html += `
+        <div class="entry-card">
+          ${imgSrc ? `<img class="${aspectClass}" src="${imgSrc}" onerror="this.style.display='none'" />` : ""}
+          <div class="entry-details">
+            <div class="entry-platform">${e.platform} ${statusBadge(e.status)}</div>
+            <div class="entry-caption">${(e.caption || "").replace(/</g, "&lt;")}</div>
+            <div class="entry-meta">
+              idempotency_key: ${e.idempotency_key}<br/>
+              platform_post_id: ${e.platform_post_id || "—"}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  document.getElementById("statusPanel").innerHTML = html;
+}
+
+function startPolling() {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(refreshStatus, 2000);
+  refreshStatus();
+}
+</script>
+
+</body>
+</html>
