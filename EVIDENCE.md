@@ -342,3 +342,35 @@ them entirely - this is the mechanism that makes a scheduled job safe
 
 to re-run after a crash without creating duplicate posts.
 
+
+
+\## Webhook signature verification (automated tests)
+
+Test: tests/test\_webhook\_security.py
+
+
+
+Output:
+
+tests/test\_webhook\_security.py::test\_forged\_webhook\_is\_rejected\_with\_400 PASSED
+
+tests/test\_webhook\_security.py::test\_modified\_body\_with\_stale\_signature\_is\_rejected PASSED
+
+tests/test\_webhook\_security.py::test\_valid\_signed\_webhook\_is\_accepted\_and\_updates\_status PASSED
+
+3 passed in 3.10s
+
+
+
+Confirms:
+
+\- A webhook with a bogus signature is rejected with 400, entry status unchanged.
+
+\- A webhook whose body was tampered with AFTER signing (valid signature for
+
+&#x20; the original body, wrong for the modified one) is also rejected with 400.
+
+\- A correctly signed webhook is accepted (200) and flips the matching
+
+&#x20; entry's status to "published" with the correct platform\_post\_id.
+
