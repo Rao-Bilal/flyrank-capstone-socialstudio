@@ -18,6 +18,7 @@ import random
 import time
 import uuid
 from typing import Optional
+import os 
 
 import httpx
 from fastapi import FastAPI, Header, HTTPException, Request
@@ -25,7 +26,7 @@ from pydantic import BaseModel
 
 app = FastAPI(title="Fake Social Platform Server")
 
-WEBHOOK_SECRET = "fake-platform-shared-secret-change-me"
+WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "fake-platform-shared-secret-change-me")
 
 ISSUED_TOKENS: dict[str, str] = {}
 IDEMPOTENCY_STORE: dict[str, dict] = {}

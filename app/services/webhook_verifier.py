@@ -7,9 +7,10 @@ update - forged or modified events get rejected with 400.
 
 import hashlib
 import hmac
+import os
 
 # Must match WEBHOOK_SECRET in fake_platform/main.py
-WEBHOOK_SECRET = "fake-platform-shared-secret-change-me"
+WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "fake-platform-shared-secret-change-me")
 
 
 def verify_signature(raw_body: bytes, provided_signature: str) -> bool:
